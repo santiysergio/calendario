@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calendario de Eventos</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+    background: #f5f7fa;
+    color: #333;
+    overflow-x: hidden; /* evita scroll horizontal */
+  }
+  h1 {
+    text-align: center;
+    color: #0052cc;
+    margin-bottom: 10px;
+  }
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgb(0 0 0 / 0.1);
+    max-height: none;
+    overflow: visible;
+  }
+  .day-name, .day {
+    padding: 12px 6px;
+    border-radius: 6px;
+    text-align: center;
+    user-select: none;
+    position: relative;
+    min-height: auto;
+  }
+  .day-name {
+    font-weight: 700;
+    color: #555;
+    background: #e6ecff;
+  }
+  .day {
+    cursor: default;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    white-space: normal;
+    word-wrap: break-word;
+  }
+  .day.has-event {
+    font-weight: 600;
+    color: #003a75;
+  }
+  .day.today {
+    border: 3px solid #0052cc;
+    font-weight: 700;
+    color: #00295b;
+  }
+  .events-inside {
+    margin-top: 8px;
+    font-size: 12px;
+    text-align: left;
+    width: 90%;
+    white-space: normal;
+  }
+  .events-inside div {
+    background-color: #c7e0ff;
+    margin-bottom: 4px;
+    border-radius: 3px;
+    padding: 3px 6px;
+    overflow-wrap: break-word;
+    white-space: normal;
+  }
+  #month-year {
+    text-align: center;
+    font-size: 1.6em;
+    margin-bottom: 15px;
+    color: #003a75;
+  }
+  button {
+    margin: 10px 6px;
+    padding: 10px 16px;
+    cursor: pointer;
+    background: #0052cc;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    font-weight: 600;
+    box-shadow: 0 3px 6px rgb(0 0 0 / 0.15);
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background: #003a75;
+  }
+  button:focus {
+    outline: none;
+  }
+</style>
+</head>
+<body>
+
+<h1>Calendario de Eventos</h1>
+<div id="month-year"></div>
+<div style="text-align:center;">
+  <button id="prev-month">Anterior</button>
+  <button id="next-month">Siguiente</button>
+</div>
+<div class="calendar" id="calendar">
+  <div class="day-name">Dom</div>
+  <div class="day-name">Lun</div>
+  <div class="day-name">Mar</div>
+  <div class="day-name">Mié</div>
+  <div class="day-name">Jue</div>
+  <div class="day-name">Vie</div>
+  <div class="day-name">Sáb</div>
+</div>
+
+<script>
+  const calendarEl = document.getElementById('calendar');
+  const monthYearEl = document.getElementById('month-year');
+  const prevBtn = document.getElementById('prev-month');
+  const nextBtn = document.getElementById('next-month');
+
+  let currentDate = new Date();
+  let events = [];
+
+  async function loadEvents() {
+    try {
+      const res = await fetch('/events');
+      events = await res.json();
+      renderCalendar();
+    } catch (err) {
+      alert('Error cargando eventos.');
+    }
+  }
+
+  function renderCalendar() {
+    // Borrar días antiguos
+    calendarEl.querySelectorAll('.day').forEach(d => d.remove());
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    monthYearEl.textContent = `${meses[month]} ${year}`;
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDay = firstDay.getDay();
+
+    // Espacios en blanco antes del primer día
+    for(let i=0; i<startDay; i++) {
+      const emptyCell = document.createElement('div');
+      emptyCell.classList.add('day');
+      emptyCell.style.background = '#f0f0f0';
+      calendarEl.appendChild(emptyCell);
+    }
+
+    for(let day=1; day <= daysInMonth; day++) {
+      const dayCell = document.createElement('div');
+      dayCell.classList.add('day');
+      dayCell.textContent = day;
+
+      const today = new Date();
+      if (
+        day === today.getDate() &&
+        month === today.getMonth() &&
+        year === today.getFullYear()
+      ) {
+        dayCell.classList.add('today');
+      }
+
+      const dayEvents = events.filter(ev => {
+        const evDate = new Date(ev.start);
+        return (
+          evDate.getDate() === day &&
+          evDate.getMonth() === month &&
+          evDate.getFullYear() === year
+        );
+      });
+
+      if(dayEvents.length > 0) {
+        dayCell.classList.add('has-event');
+        const evContainer = document.createElement('div');
+        evContainer.classList.add('events-inside');
+        dayEvents.forEach(ev => {
+          const start = new Date(ev.start);
+          const evDiv = document.createElement('div');
+          evDiv.textContent = `${start.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} ${ev.summary}`;
+          evContainer.appendChild(evDiv);
+        });
+        dayCell.appendChild(evContainer);
+      }
+
+      calendarEl.appendChild(dayCell);
+    }
+  }
+
+  prevBtn.addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+  });
+
+  loadEvents();
+</script>
+
+</body>
+</html>
