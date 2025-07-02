@@ -1,3 +1,4 @@
+import os
 import requests
 from ics import Calendar
 from flask import Flask, jsonify, send_from_directory
@@ -15,7 +16,6 @@ calendars = {
     "Sevilla": "https://calendar.google.com/calendar/ical/4g31en3kv4eqeuvbl8hrtd87v0%40group.calendar.google.com/public/basic.ics",
 }
 
-# Zona horaria de Madrid
 madrid_tz = pytz.timezone("Europe/Madrid")
 
 @app.route('/')
@@ -31,7 +31,6 @@ def get_events():
             r = requests.get(url)
             r.raise_for_status()
             c = Calendar(r.text)
-            # Filtrar eventos que empiezan en el futuro respecto a ahora en Madrid
             future_events = [e for e in c.events if e.begin.astimezone(madrid_tz) >= now]
             events_sorted = sorted(future_events, key=lambda e: e.begin)[:5]
             for e in events_sorted:
@@ -50,4 +49,5 @@ def get_events():
     return jsonify(all_events)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
