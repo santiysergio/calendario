@@ -1,7 +1,8 @@
 import requests
 from ics import Calendar
 from flask import Flask, jsonify, send_from_directory
-from datetime import datetime, timezone
+from datetime import datetime
+import pytz
 
 app = Flask(__name__)
 
@@ -14,27 +15,31 @@ calendars = {
     "Sevilla": "https://calendar.google.com/calendar/ical/4g31en3kv4eqeuvbl8hrtd87v0%40group.calendar.google.com/public/basic.ics",
 }
 
+# Zona horaria de Madrid
+madrid_tz = pytz.timezone("Europe/Madrid")
+
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
 
 @app.route('/events')
 def get_events():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(madrid_tz)
     all_events = []
     for name, url in calendars.items():
         try:
             r = requests.get(url)
             r.raise_for_status()
             c = Calendar(r.text)
-            future_events = [e for e in c.events if e.begin >= now]
+            # Filtrar eventos que empiezan en el futuro respecto a ahora en Madrid
+            future_events = [e for e in c.events if e.begin.astimezone(madrid_tz) >= now]
             events_sorted = sorted(future_events, key=lambda e: e.begin)[:5]
             for e in events_sorted:
                 all_events.append({
                     "calendar": name,
                     "summary": e.name,
-                    "start": e.begin.isoformat(),
-                    "end": e.end.isoformat(),
+                    "start": e.begin.astimezone(madrid_tz).isoformat(),
+                    "end": e.end.astimezone(madrid_tz).isoformat(),
                 })
         except Exception as ex:
             all_events.append({
