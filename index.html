@@ -12,7 +12,7 @@
     padding: 20px;
     background: #f5f7fa;
     color: #333;
-    overflow-x: hidden; /* evita scroll horizontal */
+    overflow-x: hidden;
   }
   h1 {
     text-align: center;
@@ -27,8 +27,6 @@
     padding: 10px;
     border-radius: 8px;
     box-shadow: 0 3px 10px rgb(0 0 0 / 0.1);
-    max-height: none;
-    overflow: visible;
   }
   .day-name, .day {
     padding: 12px 6px;
@@ -36,7 +34,6 @@
     text-align: center;
     user-select: none;
     position: relative;
-    min-height: auto;
   }
   .day-name {
     font-weight: 700;
@@ -46,7 +43,6 @@
   .day {
     cursor: default;
     transition: background-color 0.25s ease, color 0.25s ease;
-    overflow: visible;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -215,7 +211,14 @@
   });
 
   loadEvents();
+
+  // 🔄 Refrescar eventos cada 5 minutos (300000 ms)
+  setInterval(() => {
+    loadEvents();
+  }, 300000);
+
 </script>
 
 </body>
 </html>
+
