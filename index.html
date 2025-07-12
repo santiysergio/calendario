@@ -153,27 +153,22 @@
     const startDay = firstDay.getDay();
     const today = new Date();
 
+    let week = [];
+
     // Espacios en blanco antes del primer día
     for (let i = 0; i < startDay; i++) {
       const emptyCell = document.createElement('div');
       emptyCell.classList.add('day');
       emptyCell.style.background = '#f0f0f0';
-      calendarEl.appendChild(emptyCell);
+      week.push(emptyCell);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const isPastDay = (year === today.getFullYear() && month === today.getMonth() && day < today.getDate());
-
       const dayCell = document.createElement('div');
       dayCell.classList.add('day');
-
-      if (isPastDay) {
-        dayCell.style.background = '#f0f0f0';
-        calendarEl.appendChild(dayCell);
-        continue;
-      }
-
       dayCell.textContent = day;
+
+      const cellDate = new Date(year, month, day);
 
       if (
         day === today.getDate() &&
@@ -205,7 +200,22 @@
         dayCell.appendChild(evContainer);
       }
 
-      calendarEl.appendChild(dayCell);
+      week.push(dayCell);
+
+      // Cuando se complete la semana o llegue el final del mes
+      if (week.length === 7 || day === daysInMonth) {
+        // Calcular la fecha del sábado de esa semana
+        const weekStartDay = day - (week.length - 1);
+        const saturdayDate = new Date(year, month, weekStartDay + 6);
+
+        // Mostrar la semana solo si el sábado no ha pasado
+        if (saturdayDate >= today || currentDate.getMonth() !== today.getMonth()) {
+          week.forEach(cell => calendarEl.appendChild(cell));
+        }
+
+        // Reiniciar semana
+        week = [];
+      }
     }
   }
 
@@ -221,11 +231,10 @@
 
   loadEvents();
 
-  // 🔄 Refrescar eventos cada 5 minutos (300000 ms)
+  // Refrescar eventos cada 5 minutos
   setInterval(() => {
     loadEvents();
   }, 300000);
-
 </script>
 
 </body>
