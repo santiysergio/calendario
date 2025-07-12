@@ -138,6 +138,7 @@
   }
 
   function renderCalendar() {
+    // Borrar días antiguos
     calendarEl.querySelectorAll('.day').forEach(d => d.remove());
 
     const year = currentDate.getFullYear();
@@ -150,27 +151,28 @@
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startDay = firstDay.getDay();
-
     const today = new Date();
 
-    // Espacios en blanco antes del primer día solo si no es mes actual
-    if (year > today.getFullYear() || (year === today.getFullYear() && month > today.getMonth())) {
-      for (let i = 0; i < startDay; i++) {
-        const emptyCell = document.createElement('div');
-        emptyCell.classList.add('day');
-        emptyCell.style.background = '#f0f0f0';
-        calendarEl.appendChild(emptyCell);
-      }
+    // Espacios en blanco antes del primer día
+    for (let i = 0; i < startDay; i++) {
+      const emptyCell = document.createElement('div');
+      emptyCell.classList.add('day');
+      emptyCell.style.background = '#f0f0f0';
+      calendarEl.appendChild(emptyCell);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      // Omitir días pasados del mes actual
-      if (year === today.getFullYear() && month === today.getMonth() && day < today.getDate()) {
-        continue;
-      }
+      const isPastDay = (year === today.getFullYear() && month === today.getMonth() && day < today.getDate());
 
       const dayCell = document.createElement('div');
       dayCell.classList.add('day');
+
+      if (isPastDay) {
+        dayCell.style.background = '#f0f0f0';
+        calendarEl.appendChild(dayCell);
+        continue;
+      }
+
       dayCell.textContent = day;
 
       if (
@@ -219,12 +221,14 @@
 
   loadEvents();
 
-  // Refrescar cada 5 minutos
+  // 🔄 Refrescar eventos cada 5 minutos (300000 ms)
   setInterval(() => {
     loadEvents();
   }, 300000);
+
 </script>
 
 </body>
 </html>
+
 
